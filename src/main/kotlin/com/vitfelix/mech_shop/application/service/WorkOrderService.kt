@@ -6,6 +6,8 @@ import com.vitfelix.mech_shop.domain.model.*
 import com.vitfelix.mech_shop.domain.repository.*
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.Duration
+import java.time.LocalDateTime
 
 @Service
 class WorkOrderService(
@@ -18,7 +20,9 @@ class WorkOrderService(
 
     @Transactional
     fun createWorkOrder(dto: CreateWorkOrderDto): WorkOrderEntity {
-        // 1. Identificação/Cadastro do Cliente
+        // Validação de dados sensíveis
+        validateSensitiveData(dto.customerDocument, dto.vehicleLicensePlate)
+
         val customer = customerRepository.findByDocument(dto.customerDocument)
             ?: customerRepository.save(CustomerEntity(document = dto.customerDocument, name = dto.customerName))
 
@@ -26,7 +30,7 @@ class WorkOrderService(
         val vehicle = vehicleRepository.findByLicensePlate(dto.vehicleLicensePlate)
             ?: vehicleRepository.save(
                 VehicleEntity(
-                    licensePlate = dto.vehicleLicensePlate,
+                    licensePlate = dto.vehicleLicensePlate.uppercase(),
                     brand = dto.vehicleBrand,
                     model = dto.vehicleModel,
                     year = dto.vehicleYear,
@@ -52,7 +56,52 @@ class WorkOrderService(
 
         // 6. Envio fictício do orçamento (Simulando o requisito do MVP alterando o status)
         workOrder.status = WorkOrderStatusEnum.WAITING_APPROVAL
-
         return workOrderRepository.save(workOrder)
+    }
+
+    fun getWorkOrderById(id: Long): WorkOrderEntity {
+        return workOrderRepository.findById(id)
+            .orElseThrow { RuntimeException("Work Order not found with id: $id") }
+    }
+
+    @Transactional
+    fun updateStatus(id: Long, newStatus: WorkOrderStatusEnum): WorkOrderEntity {
+        val workOrder = getWorkOrderById(id)
+
+        // Alteração automática dos timestamps baseada no status
+        if (newStatus == WorkOrderStatusEnum.IN_EXECUTION) {
+            workOrder.startedAt = LocalDateTime.now()
+        } else if (newStatus == WorkOrderStatusEnum.FINISHED) {
+            workOrder.finishedAt = LocalDateTime.now()
+
+        }
+
+        workOrder.status = newStatus
+        return workOrderRepository.save(workOrder)
+    }
+
+    // Monitoramento do tempo médio de execução (em minutos)
+    fun getAverageExecutionTimeInMinutes(): Double {
+        val completedOrders = workOrderRepository.findAll().filter {
+            it.startedAt != null && it.finishedAt != null
+        }
+        if (completedOrders.isEmpty()) return 0.0
+
+        val totalMinutes = completedOrders.sumOf {
+            Duration.between(it.startedAt, it.finishedAt).toMinutes()
+        }
+        return totalMinutes.toDouble() / completedOrders.size
+    }
+
+    private fun validateSensitiveData(document: String, licensePlate: String) {
+        val documentRegex = "^(\\d{11}|\\d{14})$".toRegex() // 11 dígitos (CPF) ou 14 (CNPJ)
+        val plateRegex = "^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$".toRegex() // Padrão Nacional e Mercosul
+
+        if (!documentRegex.matches(document)) {
+            throw IllegalArgumentException("Invalid CPF/CNPJ format. Must contain only 11 or 14 digits.")
+        }
+        if (!plateRegex.matches(licensePlate.uppercase())) {
+            throw IllegalArgumentException("Invalid License Plate format.")
+        }
     }
 }

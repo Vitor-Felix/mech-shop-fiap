@@ -2,6 +2,7 @@ package com.vitfelix.mech_shop.infrastructure.controller
 
 import com.vitfelix.mech_shop.application.dto.CreateWorkOrderDto
 import com.vitfelix.mech_shop.application.service.WorkOrderService
+import com.vitfelix.mech_shop.domain.enums.WorkOrderStatusEnum
 import com.vitfelix.mech_shop.domain.model.WorkOrderEntity
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -17,5 +18,20 @@ class WorkOrderController(
     fun createWorkOrder(@RequestBody dto: CreateWorkOrderDto): ResponseEntity<WorkOrderEntity> {
         val createdOrder = workOrderService.createWorkOrder(dto)
         return ResponseEntity.status(HttpStatus.CREATED).body(createdOrder)
+    }
+
+    // Consulta por parte do cliente/admin para acompanhar o progresso
+    @GetMapping("/{id}")
+    fun getWorkOrder(@PathVariable id: Long): ResponseEntity<WorkOrderEntity> {
+        return ResponseEntity.ok(workOrderService.getWorkOrderById(id))
+    }
+
+    // Alteração manual/automática de status
+    @PatchMapping("/{id}/status")
+    fun updateStatus(
+        @PathVariable id: Long,
+        @RequestParam status: WorkOrderStatusEnum
+    ): ResponseEntity<WorkOrderEntity> {
+        return ResponseEntity.ok(workOrderService.updateStatus(id, status))
     }
 }

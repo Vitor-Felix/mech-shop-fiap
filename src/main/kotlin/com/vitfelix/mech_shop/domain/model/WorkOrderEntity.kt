@@ -3,6 +3,7 @@ package com.vitfelix.mech_shop.domain.model
 import com.vitfelix.mech_shop.domain.enums.WorkOrderStatusEnum
 import jakarta.persistence.*
 import java.math.BigDecimal
+import java.time.LocalDateTime
 
 @Entity
 data class WorkOrderEntity(
@@ -11,6 +12,8 @@ data class WorkOrderEntity(
     @ManyToOne val vehicle: VehicleEntity,
     @Enumerated(EnumType.STRING) var status: WorkOrderStatusEnum = WorkOrderStatusEnum.RECEIVED,
     var totalAmount: BigDecimal = BigDecimal.ZERO,
+    var startedAt: LocalDateTime? = null,  // Tempo de execução
+    var finishedAt: LocalDateTime? = null, // Tempo de finalização
 
     @ManyToMany
     @JoinTable(
@@ -28,7 +31,6 @@ data class WorkOrderEntity(
     )
     val parts: MutableList<PartEntity> = mutableListOf()
 ) {
-    // Domain rule: Budget generated automatically
     fun calculateBudget() {
         val totalServices = works.sumOf { it.amount }
         val totalParts = parts.sumOf { it.unitPrice }
