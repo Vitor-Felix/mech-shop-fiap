@@ -6,6 +6,7 @@ import com.vitfelix.mech_shop.application.dto.response.WorkOrderResponse
 import com.vitfelix.mech_shop.application.service.WorkOrderService
 import com.vitfelix.mech_shop.domain.enums.WorkOrderStatusEnum
 import com.vitfelix.mech_shop.domain.model.WorkOrderEntity
+import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -16,7 +17,7 @@ class AdminWorkOrderController(
     private val workOrderService: WorkOrderService
 ) {
     @PostMapping
-    fun createWorkOrder(@RequestBody dto: CreateWorkOrderRequest): ResponseEntity<WorkOrderEntity> {
+    fun createWorkOrder(@Valid @RequestBody dto: CreateWorkOrderRequest): ResponseEntity<WorkOrderEntity> {
         return ResponseEntity.status(HttpStatus.CREATED).body(workOrderService.createWorkOrder(dto))
     }
 
@@ -24,7 +25,7 @@ class AdminWorkOrderController(
     @PutMapping("/{id}/items")
     fun updateItems(
         @PathVariable id: Long,
-        @RequestBody dto: UpdateWorkOrderItemsRequest
+        @Valid @RequestBody dto: UpdateWorkOrderItemsRequest
     ): ResponseEntity<WorkOrderEntity> {
         return ResponseEntity.ok(workOrderService.updateItemsAndGenerateBudget(id, dto))
     }
