@@ -1,4 +1,4 @@
-package com.vitfelix.mech_shop.application.dto
+package com.vitfelix.mech_shop.application.dto.response
 
 import com.vitfelix.mech_shop.domain.enums.WorkOrderStatusEnum
 import java.math.BigDecimal

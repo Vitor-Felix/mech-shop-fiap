@@ -1,7 +1,7 @@
 package com.vitfelix.mech_shop.application.service
 
 import com.vitfelix.mech_shop.application.dto.CreateWorkOrderDto
-import com.vitfelix.mech_shop.application.dto.WorkOrderResponse
+import com.vitfelix.mech_shop.application.dto.response.WorkOrderResponse
 import com.vitfelix.mech_shop.domain.enums.WorkOrderStatusEnum
 import com.vitfelix.mech_shop.domain.model.*
 import com.vitfelix.mech_shop.domain.repository.*
