@@ -20,17 +20,24 @@ class SecurityConfig(
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { req ->
-                // Rotas Públicas (Login e Visão do Cliente)
+                // 1. Rotas Públicas do Sistema
                 req.requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 req.requestMatchers("/api/work-orders/**").permitAll()
 
-                // Rotas Privadas (Tudo que for admin precisa de token)
+                // 2. Rotas Públicas do Swagger / OpenAPI
+                req.requestMatchers("/swagger-ui/**").permitAll()
+                req.requestMatchers("/v3/api-docs/**").permitAll()
+                req.requestMatchers("/swagger-ui.html").permitAll()
+
+                // 3. Libera a rota de erro (Evita que o Spring Security transforme um 404 ou 500 em 403)
+                req.requestMatchers("/error").permitAll()
+
+                // 4. Rotas Privadas (Tudo que for admin precisa de token)
                 req.requestMatchers("/api/admin/**").authenticated()
 
                 // Qualquer outra rota que sobrar, bloqueia
                 req.anyRequest().authenticated()
             }
-            // Coloca o nosso filtro antes do filtro padrão do Spring
             .addFilterBefore(securityFilter, UsernamePasswordAuthenticationFilter::class.java)
             .build()
     }
