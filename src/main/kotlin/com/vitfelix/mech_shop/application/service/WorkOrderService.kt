@@ -1,6 +1,7 @@
 package com.vitfelix.mech_shop.application.service
 
 import com.vitfelix.mech_shop.application.dto.CreateWorkOrderDto
+import com.vitfelix.mech_shop.application.dto.WorkOrderResponse
 import com.vitfelix.mech_shop.domain.enums.WorkOrderStatusEnum
 import com.vitfelix.mech_shop.domain.model.*
 import com.vitfelix.mech_shop.domain.repository.*
@@ -88,9 +89,23 @@ class WorkOrderService(
         if (completedOrders.isEmpty()) return 0.0
 
         val totalMinutes = completedOrders.sumOf {
-            Duration.between(it.startedAt, it.finishedAt).toMinutes()
+            Duration.between(it.startedAt, it.finishedAt).toSeconds()
         }
         return totalMinutes.toDouble() / completedOrders.size
+    }
+
+    fun getAllWorkOrders(): List<WorkOrderResponse> {
+        return workOrderRepository.findAll().map {
+            WorkOrderResponse(
+                it.id,
+                it.customer.name,
+                it.vehicle.licensePlate,
+                it.status,
+                it.totalAmount,
+                it.startedAt,
+                it.finishedAt
+            )
+        }
     }
 
     private fun validateSensitiveData(document: String, licensePlate: String) {

@@ -1,6 +1,7 @@
 package com.vitfelix.mech_shop.infrastructure.controller
 
 import com.vitfelix.mech_shop.application.dto.CreateWorkOrderDto
+import com.vitfelix.mech_shop.application.dto.WorkOrderResponse
 import com.vitfelix.mech_shop.application.service.WorkOrderService
 import com.vitfelix.mech_shop.domain.enums.WorkOrderStatusEnum
 import com.vitfelix.mech_shop.domain.model.WorkOrderEntity
@@ -18,6 +19,11 @@ class WorkOrderController(
     fun createWorkOrder(@RequestBody dto: CreateWorkOrderDto): ResponseEntity<WorkOrderEntity> {
         val createdOrder = workOrderService.createWorkOrder(dto)
         return ResponseEntity.status(HttpStatus.CREATED).body(createdOrder)
+    }
+
+    @GetMapping
+    fun listAllWorkOrders(): ResponseEntity<List<WorkOrderResponse>> {
+        return ResponseEntity.ok(workOrderService.getAllWorkOrders())
     }
 
     // Consulta por parte do cliente/admin para acompanhar o progresso
