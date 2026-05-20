@@ -10,10 +10,11 @@ data class WorkOrderEntity(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY) val id: Long? = null,
     @ManyToOne val customer: CustomerEntity,
     @ManyToOne val vehicle: VehicleEntity,
+    var observation: String? = null, // <-- Relato do cliente
     @Enumerated(EnumType.STRING) var status: WorkOrderStatusEnum = WorkOrderStatusEnum.RECEIVED,
     var totalAmount: BigDecimal = BigDecimal.ZERO,
-    var startedAt: LocalDateTime? = null,  // Tempo de execução
-    var finishedAt: LocalDateTime? = null, // Tempo de finalização
+    var startedAt: LocalDateTime? = null,
+    var finishedAt: LocalDateTime? = null,
 
     @ManyToMany
     @JoinTable(

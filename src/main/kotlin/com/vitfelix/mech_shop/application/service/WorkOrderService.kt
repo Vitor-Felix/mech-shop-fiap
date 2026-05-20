@@ -1,9 +1,10 @@
 package com.vitfelix.mech_shop.application.service
 
-import com.vitfelix.mech_shop.application.dto.CreateWorkOrderDto
+import com.vitfelix.mech_shop.application.dto.request.CreateWorkOrderRequest
+import com.vitfelix.mech_shop.application.dto.request.UpdateWorkOrderItemsRequest
 import com.vitfelix.mech_shop.application.dto.response.WorkOrderResponse
 import com.vitfelix.mech_shop.domain.enums.WorkOrderStatusEnum
-import com.vitfelix.mech_shop.domain.model.*
+import com.vitfelix.mech_shop.domain.model.WorkOrderEntity
 import com.vitfelix.mech_shop.domain.repository.*
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -12,7 +13,6 @@ import java.time.LocalDateTime
 
 @Service
 class WorkOrderService(
-    private val customerRepository: CustomerRepository,
     private val vehicleRepository: VehicleRepository,
     private val workRepository: WorkRepository,
     private val partRepository: PartRepository,
@@ -20,43 +20,18 @@ class WorkOrderService(
 ) {
 
     @Transactional
-    fun createWorkOrder(dto: CreateWorkOrderDto): WorkOrderEntity {
-        // Validação de dados sensíveis
-        validateSensitiveData(dto.customerDocument, dto.vehicleLicensePlate)
+    fun createWorkOrder(dto: CreateWorkOrderRequest): WorkOrderEntity {
+        // Agora recebe apenas o ID do veículo, pressupondo que já foi cadastrado
+        val vehicle = vehicleRepository.findById(dto.vehicleId)
+            .orElseThrow { IllegalArgumentException("Vehicle not found") }
 
-        val customer = customerRepository.findByDocument(dto.customerDocument)
-            ?: customerRepository.save(CustomerEntity(document = dto.customerDocument, name = dto.customerName))
-
-        // 2. Identificação/Cadastro do Veículo
-        val vehicle = vehicleRepository.findByLicensePlate(dto.vehicleLicensePlate)
-            ?: vehicleRepository.save(
-                VehicleEntity(
-                    licensePlate = dto.vehicleLicensePlate.uppercase(),
-                    brand = dto.vehicleBrand,
-                    model = dto.vehicleModel,
-                    year = dto.vehicleYear,
-                    customer = customer
-                )
-            )
-
-        // 3. Busca de Serviços e Peças solicitados
-        val works = workRepository.findAllById(dto.serviceIds)
-        val parts = partRepository.findAllById(dto.partIds)
-
-        // 4. Instanciação da OS com status inicial RECEBIDA
         val workOrder = WorkOrderEntity(
-            customer = customer,
+            customer = vehicle.customer, // Cliente vem atrelado ao veículo
             vehicle = vehicle,
-            status = WorkOrderStatusEnum.RECEIVED,
-            works = works.toMutableList(),
-            parts = parts.toMutableList()
+            observation = dto.observation,
+            status = WorkOrderStatusEnum.RECEIVED // Nasce apenas Recebida
         )
 
-        // 5. Orçamento gerado automaticamente (Regra de Domínio)
-        workOrder.calculateBudget()
-
-        // 6. Envio fictício do orçamento (Simulando o requisito do MVP alterando o status)
-        workOrder.status = WorkOrderStatusEnum.WAITING_APPROVAL
         return workOrderRepository.save(workOrder)
     }
 
@@ -108,15 +83,39 @@ class WorkOrderService(
         }
     }
 
-    private fun validateSensitiveData(document: String, licensePlate: String) {
-        val documentRegex = "^(\\d{11}|\\d{14})$".toRegex() // 11 dígitos (CPF) ou 14 (CNPJ)
-        val plateRegex = "^[A-Z]{3}[0-9][A-Z0-9][0-9]{2}$".toRegex() // Padrão Nacional e Mercosul
+    @Transactional
+    fun updateItemsAndGenerateBudget(id: Long, dto: UpdateWorkOrderItemsRequest): WorkOrderEntity {
+        val workOrder = getWorkOrderById(id)
 
-        if (!documentRegex.matches(document)) {
-            throw IllegalArgumentException("Invalid CPF/CNPJ format. Must contain only 11 or 14 digits.")
+        // Limpa e adiciona os novos itens (substituição total, facilita o front)
+        workOrder.works.clear()
+        workOrder.works.addAll(workRepository.findAllById(dto.serviceIds))
+
+        workOrder.parts.clear()
+        workOrder.parts.addAll(partRepository.findAllById(dto.partIds))
+
+        // Regra: Orçamento gerado automaticamente
+        workOrder.calculateBudget()
+
+        // Avança o status para aguardar o cliente
+        workOrder.status = WorkOrderStatusEnum.WAITING_APPROVAL
+
+        return workOrderRepository.save(workOrder)
+    }
+
+    @Transactional
+    fun approveWorkOrder(id: Long): WorkOrderEntity {
+        val workOrder = getWorkOrderById(id)
+
+        // Regra de negócio: Só pode aprovar se estiver aguardando aprovação
+        if (workOrder.status != WorkOrderStatusEnum.WAITING_APPROVAL) {
+            throw IllegalStateException("Work Order cannot be approved in its current status: ${workOrder.status}")
         }
-        if (!plateRegex.matches(licensePlate.uppercase())) {
-            throw IllegalArgumentException("Invalid License Plate format.")
-        }
+
+        // Muda o status para Em Execução e inicia o relógio
+        workOrder.status = WorkOrderStatusEnum.IN_EXECUTION
+        workOrder.startedAt = LocalDateTime.now()
+
+        return workOrderRepository.save(workOrder)
     }
 }

@@ -7,10 +7,7 @@ interface CustomerRepository : JpaRepository<CustomerEntity, Long> {
     fun findByDocument(document: String): CustomerEntity?
 }
 
-interface VehicleRepository : JpaRepository<VehicleEntity, Long> {
-    fun findByLicensePlate(licensePlate: String): VehicleEntity?
-}
-
+interface VehicleRepository : JpaRepository<VehicleEntity, Long>
 interface WorkRepository : JpaRepository<WorkEntity, Long>
 interface PartRepository : JpaRepository<PartEntity, Long>
 interface WorkOrderRepository : JpaRepository<WorkOrderEntity, Long>

@@ -1,11 +1,7 @@
 package com.vitfelix.mech_shop.infrastructure.controller
 
-import com.vitfelix.mech_shop.application.dto.CreateWorkOrderDto
-import com.vitfelix.mech_shop.application.dto.response.WorkOrderResponse
 import com.vitfelix.mech_shop.application.service.WorkOrderService
-import com.vitfelix.mech_shop.domain.enums.WorkOrderStatusEnum
 import com.vitfelix.mech_shop.domain.model.WorkOrderEntity
-import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 
@@ -14,30 +10,15 @@ import org.springframework.web.bind.annotation.*
 class WorkOrderController(
     private val workOrderService: WorkOrderService
 ) {
-
-    @PostMapping
-    fun createWorkOrder(@RequestBody dto: CreateWorkOrderDto): ResponseEntity<WorkOrderEntity> {
-        val createdOrder = workOrderService.createWorkOrder(dto)
-        return ResponseEntity.status(HttpStatus.CREATED).body(createdOrder)
-    }
-
-    @GetMapping
-    fun listAllWorkOrders(): ResponseEntity<List<WorkOrderResponse>> {
-        return ResponseEntity.ok(workOrderService.getAllWorkOrders())
-    }
-
-    // Consulta por parte do cliente/admin para acompanhar o progresso
+    // Consulta pública para o cliente acompanhar
     @GetMapping("/{id}")
     fun getWorkOrder(@PathVariable id: Long): ResponseEntity<WorkOrderEntity> {
         return ResponseEntity.ok(workOrderService.getWorkOrderById(id))
     }
 
-    // Alteração manual/automática de status
-    @PatchMapping("/{id}/status")
-    fun updateStatus(
-        @PathVariable id: Long,
-        @RequestParam status: WorkOrderStatusEnum
-    ): ResponseEntity<WorkOrderEntity> {
-        return ResponseEntity.ok(workOrderService.updateStatus(id, status))
+    // Cliente aprova o orçamento
+    @PostMapping("/{id}/approve")
+    fun approveWorkOrder(@PathVariable id: Long): ResponseEntity<WorkOrderEntity> {
+        return ResponseEntity.ok(workOrderService.approveWorkOrder(id))
     }
 }
