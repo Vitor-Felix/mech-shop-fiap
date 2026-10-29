@@ -93,6 +93,7 @@ out/
 application-local.yml
 application-local.properties
 *.pid
+.ai/
 
 # Heaps and dumps
 *.hprof

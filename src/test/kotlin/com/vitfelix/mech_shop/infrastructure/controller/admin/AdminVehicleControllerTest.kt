@@ -1,9 +1,8 @@
 package com.vitfelix.mech_shop.infrastructure.controller.admin
 
 import com.vitfelix.mech_shop.application.dto.request.VehicleRequest
+import com.vitfelix.mech_shop.application.dto.response.VehicleResponse
 import com.vitfelix.mech_shop.application.service.VehicleService
-import com.vitfelix.mech_shop.domain.model.CustomerEntity
-import com.vitfelix.mech_shop.domain.model.VehicleEntity
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
@@ -23,6 +22,7 @@ import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
 import tools.jackson.databind.ObjectMapper
+import java.math.BigDecimal
 
 @SpringBootTest
 class AdminVehicleControllerTest {
@@ -46,24 +46,22 @@ class AdminVehicleControllerTest {
             .build()
     }
 
-    private val sampleCustomer = CustomerEntity(id = 1L, name = "João Silva", document = "12345678901")
-
-    // Placa "ABC1D23" passa perfeitamente no Regex de validação do DTO
     private val sampleRequest = VehicleRequest(
-        licensePlate = "ABC1D23",
         brand = "Ford",
         model = "Fiesta",
         year = 2020,
-        customerId = 1L
+        color = "Azul",
+        price = BigDecimal("45000.00")
     )
 
-    private val sampleEntity = VehicleEntity(
+    private val sampleEntity = VehicleResponse(
         id = 1L,
-        licensePlate = "ABC1D23",
         brand = "Ford",
         model = "Fiesta",
         year = 2020,
-        customer = sampleCustomer
+        color = "Azul",
+        price = BigDecimal("45000.00"),
+        version = 1L
     )
 
     @Test
@@ -75,7 +73,10 @@ class AdminVehicleControllerTest {
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk)
             .andExpect(jsonPath("$[0].id").value(1))
-            .andExpect(jsonPath("$[0].licensePlate").value("ABC1D23"))
+            .andExpect(jsonPath("$[0].color").value("Azul"))
+            .andExpect(jsonPath("$[0].price").value(45000.0))
+            .andExpect(jsonPath("$[0].licensePlate").doesNotExist())
+            .andExpect(jsonPath("$[0].customer").doesNotExist())
     }
 
     @Test
@@ -101,7 +102,22 @@ class AdminVehicleControllerTest {
             .content(objectMapper.writeValueAsString(sampleRequest)))
             .andExpect(status().isCreated)
             .andExpect(jsonPath("$.id").value(1))
-            .andExpect(jsonPath("$.licensePlate").value("ABC1D23"))
+            .andExpect(jsonPath("$.color").value("Azul"))
+            .andExpect(jsonPath("$.price").value(45000.0))
+            .andExpect(jsonPath("$.licensePlate").doesNotExist())
+            .andExpect(jsonPath("$.customer").doesNotExist())
+    }
+
+    @Test
+    @WithMockUser
+    fun `should reject invalid vehicle data`() {
+        val invalidRequest = sampleRequest.copy(price = BigDecimal("-1.00"))
+
+        mockMvc.perform(post("/api/admin/vehicles")
+            .with(csrf())
+            .contentType(MediaType.APPLICATION_JSON)
+            .content(objectMapper.writeValueAsString(invalidRequest)))
+            .andExpect(status().isBadRequest)
     }
 
     @Test

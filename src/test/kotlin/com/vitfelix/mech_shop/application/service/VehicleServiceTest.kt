@@ -1,103 +1,125 @@
 package com.vitfelix.mech_shop.application.service
 
 import com.vitfelix.mech_shop.application.dto.request.VehicleRequest
-import com.vitfelix.mech_shop.domain.model.CustomerEntity
 import com.vitfelix.mech_shop.domain.model.VehicleEntity
-import com.vitfelix.mech_shop.domain.repository.CustomerRepository
 import com.vitfelix.mech_shop.domain.repository.VehicleRepository
-import org.junit.jupiter.api.Assertions.*
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
+import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.assertThrows
+import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.*
-import java.util.*
+import java.math.BigDecimal
+import java.util.Optional
 
 class VehicleServiceTest {
 
     private val vehicleRepository: VehicleRepository = mock(VehicleRepository::class.java)
-    private val customerRepository: CustomerRepository = mock(CustomerRepository::class.java)
-    private val vehicleService = VehicleService(vehicleRepository, customerRepository)
-
-    private val sampleCustomer = CustomerEntity(1L, "João Silva", "12345678901")
+    private val vehicleService = VehicleService(vehicleRepository)
+    private val request = VehicleRequest(
+        brand = "Ford",
+        model = "Fiesta",
+        year = 2020,
+        color = "Azul",
+        price = BigDecimal("45000.00")
+    )
 
     @Test
-    fun `should return all vehicles`() {
-        val vehicle = VehicleEntity(1L, "ABC1D23", "Ford", "Fiesta", 2020, sampleCustomer)
+    fun `should return all vehicles without legacy workshop fields`() {
+        val vehicle = vehicle(id = 1L)
         `when`(vehicleRepository.findAll()).thenReturn(listOf(vehicle))
 
         val result = vehicleService.getAllVehicles()
 
         assertEquals(1, result.size)
-        assertEquals("ABC1D23", result[0].licensePlate)
+        assertEquals("Ford", result[0].brand)
+        assertEquals("Azul", result[0].color)
+        assertEquals(BigDecimal("45000.00"), result[0].price)
+        assertEquals(1L, result[0].version)
     }
 
     @Test
     fun `should return vehicle by id when exists`() {
-        val vehicle = VehicleEntity(1L, "ABC1D23", "Ford", "Fiesta", 2020, sampleCustomer)
-        `when`(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle))
+        `when`(vehicleRepository.findById(1L)).thenReturn(Optional.of(vehicle(id = 1L)))
 
         val result = vehicleService.getVehicleById(1L)
 
         assertNotNull(result)
         assertEquals(1L, result.id)
+        assertEquals("Fiesta", result.model)
     }
 
     @Test
     fun `should throw exception when vehicle id does not exist`() {
         `when`(vehicleRepository.findById(1L)).thenReturn(Optional.empty())
 
-        val exception = assertThrows<RuntimeException> {
+        val exception = assertThrows(RuntimeException::class.java) {
             vehicleService.getVehicleById(1L)
         }
+
         assertEquals("Vehicle not found", exception.message)
     }
 
     @Test
-    fun `should create vehicle successfully`() {
-        val dto = VehicleRequest("ABC1D23", "Ford", "Fiesta", 2020, 1L)
-        val vehicle = VehicleEntity(1L, "ABC1D23", "Ford", "Fiesta", 2020, sampleCustomer)
-
-        `when`(customerRepository.findById(1L)).thenReturn(Optional.of(sampleCustomer))
-        `when`(vehicleRepository.save(any(VehicleEntity::class.java))).thenReturn(vehicle)
-
-        val result = vehicleService.createVehicle(dto)
-
-        assertEquals("ABC1D23", result.licensePlate)
-        assertEquals(1L, result.customer.id)
-    }
-
-    @Test
-    fun `should throw exception when creating vehicle with non-existent customer`() {
-        val dto = VehicleRequest("ABC1D23", "Ford", "Fiesta", 2020, 99L)
-        `when`(customerRepository.findById(99L)).thenReturn(Optional.empty())
-
-        val exception = assertThrows<RuntimeException> {
-            vehicleService.createVehicle(dto)
+    fun `should create vehicle with initial version and no workshop customer`() {
+        val captor = ArgumentCaptor.forClass(VehicleEntity::class.java)
+        `when`(vehicleRepository.save(any(VehicleEntity::class.java))).thenAnswer { invocation ->
+            invocation.getArgument<VehicleEntity>(0).copy(id = 1L)
         }
-        assertEquals("Customer not found with id: 99", exception.message)
+
+        val result = vehicleService.createVehicle(request)
+
+        verify(vehicleRepository).save(captor.capture())
+        val persisted = captor.value
+        assertEquals("Ford", persisted.brand)
+        assertEquals("Fiesta", persisted.model)
+        assertEquals(2020, persisted.year)
+        assertEquals("Azul", persisted.color)
+        assertEquals(BigDecimal("45000.00"), persisted.price)
+        assertEquals(1L, persisted.version)
+        assertEquals(null, persisted.licensePlate)
+        assertEquals(null, persisted.customer)
+        assertEquals(1L, result.id)
     }
 
     @Test
-    fun `should update vehicle successfully`() {
-        val existingVehicle = VehicleEntity(1L, "OLD1234", "Ford", "Fiesta", 2018, sampleCustomer)
-        val dto = VehicleRequest("NEW1234", "Chevrolet", "Onix", 2022, 1L)
-        val updatedVehicle = VehicleEntity(1L, "NEW1234", "Chevrolet", "Onix", 2022, sampleCustomer)
+    fun `should update vehicle fields and increment version`() {
+        val existing = vehicle(id = 1L, version = 4L)
+        val captor = ArgumentCaptor.forClass(VehicleEntity::class.java)
+        `when`(vehicleRepository.findById(1L)).thenReturn(Optional.of(existing))
+        `when`(vehicleRepository.save(any(VehicleEntity::class.java))).thenAnswer { invocation ->
+            invocation.getArgument<VehicleEntity>(0)
+        }
 
-        `when`(vehicleRepository.findById(1L)).thenReturn(Optional.of(existingVehicle))
-        `when`(customerRepository.findById(1L)).thenReturn(Optional.of(sampleCustomer))
-        `when`(vehicleRepository.save(any(VehicleEntity::class.java))).thenReturn(updatedVehicle)
+        val result = vehicleService.updateVehicle(
+            1L,
+            request.copy(model = "Polo", color = "Prata", price = BigDecimal("52000.00"))
+        )
 
-        val result = vehicleService.updateVehicle(1L, dto)
-
-        assertEquals("NEW1234", result.licensePlate)
-        assertEquals("Chevrolet", result.brand)
-        assertEquals("Onix", result.model)
+        verify(vehicleRepository).save(captor.capture())
+        assertEquals("Polo", captor.value.model)
+        assertEquals("Prata", captor.value.color)
+        assertEquals(BigDecimal("52000.00"), captor.value.price)
+        assertEquals(5L, captor.value.version)
+        assertEquals(5L, result.version)
     }
 
     @Test
     fun `should delete vehicle successfully`() {
         doNothing().`when`(vehicleRepository).deleteById(1L)
 
-        assertDoesNotThrow { vehicleService.deleteVehicle(1L) }
+        vehicleService.deleteVehicle(1L)
+
         verify(vehicleRepository, times(1)).deleteById(1L)
     }
+
+    private fun vehicle(id: Long, version: Long = 1L) = VehicleEntity(
+        id = id,
+        brand = "Ford",
+        model = "Fiesta",
+        year = 2020,
+        color = "Azul",
+        price = BigDecimal("45000.00"),
+        version = version
+    )
 }
