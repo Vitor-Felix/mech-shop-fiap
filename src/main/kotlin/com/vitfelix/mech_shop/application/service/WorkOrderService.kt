@@ -26,7 +26,8 @@ class WorkOrderService(
             .orElseThrow { IllegalArgumentException("Vehicle not found") }
 
         val workOrder = WorkOrderEntity(
-            customer = vehicle.customer, // Cliente vem atrelado ao veículo
+            customer = vehicle.customer
+                ?: throw IllegalStateException("Vehicle is not linked to a workshop customer"),
             vehicle = vehicle,
             observation = dto.observation,
             status = WorkOrderStatusEnum.RECEIVED // Nasce apenas Recebida
@@ -74,7 +75,7 @@ class WorkOrderService(
             WorkOrderResponse(
                 it.id,
                 it.customer.name,
-                it.vehicle.licensePlate,
+                it.vehicle.licensePlate ?: "",
                 it.status,
                 it.totalAmount,
                 it.startedAt,
