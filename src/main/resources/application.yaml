@@ -1,7 +1,14 @@
 # Configuração Padrão (Usada no IntelliJ)
 spring:
+  application:
+    name: vehicle-catalog-api
   profiles:
     active: dev
+
+vehicle-sales:
+  base-url: ${VEHICLE_SALES_BASE_URL:}
+  connect-timeout: ${VEHICLE_SALES_CONNECT_TIMEOUT:3s}
+  read-timeout: ${VEHICLE_SALES_READ_TIMEOUT:5s}
 
 ---
 # Perfil DEV: Roda no IntelliJ usando H2 em memória
@@ -30,7 +37,7 @@ spring:
     activate:
       on-profile: prod
   datasource:
-    url: jdbc:postgresql://mech-shop-db:5432/mechshop
+    url: jdbc:postgresql://vehicle-catalog-db:5432/mechshop
     driverClassName: org.postgresql.Driver
     username: postgres
     password: secretpassword
