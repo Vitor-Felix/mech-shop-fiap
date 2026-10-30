@@ -22,6 +22,9 @@ class AdminVehicleController(private val service: VehicleService) {
     @PutMapping("/{id}")
     fun update(@PathVariable id: Long, @Valid @RequestBody dto: VehicleRequest) = service.updateVehicle(id, dto)
 
+    @PostMapping("/{id}/sync")
+    fun retrySynchronization(@PathVariable id: Long) = service.retrySynchronization(id)
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     fun delete(@PathVariable id: Long) = service.deleteVehicle(id)

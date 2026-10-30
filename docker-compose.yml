@@ -26,6 +26,10 @@ services:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
+      - VEHICLE_SALES_BASE_URL=${VEHICLE_SALES_BASE_URL:-}
+      - MECH_SHOP_INTERNAL_TOKEN=${MECH_SHOP_INTERNAL_TOKEN:-}
+      - VEHICLE_SALES_CONNECT_TIMEOUT=${VEHICLE_SALES_CONNECT_TIMEOUT:-3s}
+      - VEHICLE_SALES_READ_TIMEOUT=${VEHICLE_SALES_READ_TIMEOUT:-5s}
     depends_on:
       vehicle-catalog-db:
         condition: service_healthy

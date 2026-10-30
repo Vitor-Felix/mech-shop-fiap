@@ -3,6 +3,7 @@ package com.vitfelix.mech_shop.infrastructure.controller.admin
 import com.vitfelix.mech_shop.application.dto.request.VehicleRequest
 import com.vitfelix.mech_shop.application.dto.response.VehicleResponse
 import com.vitfelix.mech_shop.application.service.VehicleService
+import com.vitfelix.mech_shop.domain.enums.VehicleSyncStatus
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito.`when`
@@ -61,7 +62,8 @@ class AdminVehicleControllerTest {
         year = 2020,
         color = "Azul",
         price = BigDecimal("45000.00"),
-        version = 1L
+        version = 1L,
+        syncStatus = VehicleSyncStatus.SYNCED
     )
 
     @Test
@@ -104,6 +106,7 @@ class AdminVehicleControllerTest {
             .andExpect(jsonPath("$.id").value(1))
             .andExpect(jsonPath("$.color").value("Azul"))
             .andExpect(jsonPath("$.price").value(45000.0))
+            .andExpect(jsonPath("$.syncStatus").value("SYNCED"))
             .andExpect(jsonPath("$.licensePlate").doesNotExist())
             .andExpect(jsonPath("$.customer").doesNotExist())
     }
@@ -142,5 +145,17 @@ class AdminVehicleControllerTest {
             .andExpect(status().isNoContent)
 
         verify(vehicleService).deleteVehicle(1L)
+    }
+
+    @Test
+    @WithMockUser
+    fun `should retry vehicle synchronization`() {
+        `when`(vehicleService.retrySynchronization(1L)).thenReturn(sampleEntity)
+
+        mockMvc.perform(post("/api/admin/vehicles/1/sync").with(csrf()))
+            .andExpect(status().isOk)
+            .andExpect(jsonPath("$.syncStatus").value("SYNCED"))
+
+        verify(vehicleService).retrySynchronization(1L)
     }
 }
