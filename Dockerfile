@@ -1,30 +1,18 @@
-# Estágio 1: Build da aplicação
 FROM eclipse-temurin:21-jdk AS build
 WORKDIR /app
 
-# Copia os arquivos de configuração do Gradle primeiro para cachear as dependências
 COPY gradlew .
 COPY gradle gradle
 COPY build.gradle .
 COPY settings.gradle .
 
-# Garante permissão de execução e baixa as dependências
 RUN chmod +x gradlew
-RUN ./gradlew dependencies --no-daemon
-
-# Copia o código fonte e gera o JAR (pulando os testes para o build ser ultra rápido)
 COPY src src
-RUN ./gradlew bootJar -x test --no-daemon
+RUN ./gradlew bootJar --no-daemon
 
-# Estágio 2: Ambiente de execução (Runtime)
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-
-# Copia o JAR gerado no estágio anterior
-COPY --from=build /app/build/libs/*-SNAPSHOT.jar app.jar
-
-# Porta padrão do Spring Boot
+COPY --from=build --chown=10001:10001 /app/build/libs/vehicle-catalog-api.jar app.jar
+USER 10001:10001
 EXPOSE 8080
-
-# Comando para rodar a aplicação
 ENTRYPOINT ["java", "-jar", "app.jar"]

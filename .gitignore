@@ -69,7 +69,6 @@ nbdist/
 .gradle/
 build/
 !gradle/wrapper/gradle-wrapper.jar
-!gradle/wrapper/gradle-wrapper.properties
 gradle-app.setting
 gradle-wrapper.jar
 gradle-wrapper.properties
@@ -144,3 +143,5 @@ build/reports/
 *.sublime-*
 *.swp
 *.swo
+
+!gradle/wrapper/gradle-wrapper.properties
