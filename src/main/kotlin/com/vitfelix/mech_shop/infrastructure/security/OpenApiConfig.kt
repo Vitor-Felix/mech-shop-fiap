@@ -16,9 +16,9 @@ class OpenApiConfig {
         return OpenAPI()
             .info(
                 Info()
-                    .title("Mech Shop API")
+                    .title("Vehicle Catalog API")
                     .version("1.0.0")
-                    .description("APIs do Sistema de Oficina Mecânica")
+                    .description("API de cadastro e fonte de verdade dos veículos da plataforma de vendas.")
             )
             // Adiciona o cadeado global para exigir o token nas rotas protegidas
             .addSecurityItem(SecurityRequirement().addList("BearerAuth"))

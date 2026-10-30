@@ -1,6 +1,6 @@
-# Mech Shop
+# Vehicle Catalog API
 
-Sistema de gestão de ordens de serviço para oficina mecânica.
+API principal de cadastro de veículos e fonte de verdade dos dados de catálogo para a plataforma de vendas.
 
 ## 🛠️ Tecnologias
 - **Linguagem:** Kotlin (Java 21)
