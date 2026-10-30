@@ -20,6 +20,11 @@ import org.springframework.web.context.WebApplicationContext
 import tools.jackson.databind.ObjectMapper
 
 @SpringBootTest
+@org.springframework.test.context.TestPropertySource(properties = [
+    "security.admin.username=test-admin",
+    "security.admin.password=test-password",
+    "security.jwt.secret=test-only-jwt-secret-with-at-least-32-bytes"
+])
 class AuthControllerTest {
 
     private lateinit var mockMvc: MockMvc
@@ -43,8 +48,8 @@ class AuthControllerTest {
 
     @Test
     fun `should return token when credentials are valid`() {
-        val request = LoginRequest(login = "admin", pass = "admin123")
-        `when`(tokenService.generateToken("admin")).thenReturn("mocked-jwt-token")
+        val request = LoginRequest(login = "test-admin", pass = "test-password")
+        `when`(tokenService.generateToken("test-admin")).thenReturn("mocked-jwt-token")
 
         mockMvc.perform(post("/api/auth/login")
             .with(csrf())

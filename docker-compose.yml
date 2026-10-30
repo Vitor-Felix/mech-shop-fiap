@@ -2,16 +2,14 @@ services:
   vehicle-catalog-db:
     image: postgres:16-alpine
     container_name: vehicle-catalog-postgres
-    ports:
-      - "5432:5432"
     environment:
-      POSTGRES_DB: mechshop
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: secretpassword
+      POSTGRES_DB: ${POSTGRES_DB:-mechshop}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER for the catalog database}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD for the catalog database}
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d mechshop"]
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -25,11 +23,17 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - SPRING_PROFILES_ACTIVE=prod
-      - VEHICLE_SALES_BASE_URL=${VEHICLE_SALES_BASE_URL:-}
-      - MECH_SHOP_INTERNAL_TOKEN=${MECH_SHOP_INTERNAL_TOKEN:-}
-      - VEHICLE_SALES_CONNECT_TIMEOUT=${VEHICLE_SALES_CONNECT_TIMEOUT:-3s}
-      - VEHICLE_SALES_READ_TIMEOUT=${VEHICLE_SALES_READ_TIMEOUT:-5s}
+      SPRING_PROFILES_ACTIVE: prod
+      SPRING_DATASOURCE_URL: jdbc:postgresql://vehicle-catalog-db:5432/${POSTGRES_DB:-mechshop}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:?Set POSTGRES_USER for the catalog database}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD for the catalog database}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:?Set ADMIN_USERNAME}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:?Set ADMIN_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET to at least 32 random bytes}
+      VEHICLE_SALES_BASE_URL: ${VEHICLE_SALES_BASE_URL:-}
+      MECH_SHOP_INTERNAL_TOKEN: ${MECH_SHOP_INTERNAL_TOKEN:-}
+      VEHICLE_SALES_CONNECT_TIMEOUT: ${VEHICLE_SALES_CONNECT_TIMEOUT:-3s}
+      VEHICLE_SALES_READ_TIMEOUT: ${VEHICLE_SALES_READ_TIMEOUT:-5s}
     depends_on:
       vehicle-catalog-db:
         condition: service_healthy

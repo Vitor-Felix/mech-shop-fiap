@@ -1,0 +1,11 @@
+security:
+  admin:
+    username: test-admin
+    password: test-password
+  jwt:
+    secret: test-only-jwt-secret-with-at-least-32-bytes
+
+vehicle-sales:
+  base-url: ''
+  connect-timeout: 3s
+  read-timeout: 5s

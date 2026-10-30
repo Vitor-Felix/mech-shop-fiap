@@ -2,13 +2,18 @@ package com.vitfelix.mech_shop.infrastructure.security
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
 @Service
-class TokenService {
-    private val secret = "minha-chave-secreta-muito-segura-mvp"
+class TokenService(@Value("\${security.jwt.secret}") private val secret: String) {
+    init {
+        require(secret.toByteArray(Charsets.UTF_8).size >= 32) {
+            "JWT secret must contain at least 32 bytes"
+        }
+    }
 
     fun generateToken(username: String): String {
         val algorithm = Algorithm.HMAC256(secret)

@@ -5,10 +5,27 @@ spring:
   profiles:
     active: dev
 
+security:
+  admin:
+    username: ${ADMIN_USERNAME:}
+    password: ${ADMIN_PASSWORD:}
+  jwt:
+    secret: ${JWT_SECRET:}
+
 vehicle-sales:
   base-url: ${VEHICLE_SALES_BASE_URL:}
   connect-timeout: ${VEHICLE_SALES_CONNECT_TIMEOUT:3s}
   read-timeout: ${VEHICLE_SALES_READ_TIMEOUT:5s}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
 
 ---
 # Perfil DEV: Roda no IntelliJ usando H2 em memória
@@ -31,17 +48,27 @@ spring:
       path: /h2-console
 
 ---
-# Perfil PROD: Roda no Docker usando o banco Postgres
+# Perfil PROD: Datasource e credenciais são fornecidos pelo ambiente
 spring:
   config:
     activate:
       on-profile: prod
   datasource:
-    url: jdbc:postgresql://vehicle-catalog-db:5432/mechshop
+    url: ${SPRING_DATASOURCE_URL}
     driverClassName: org.postgresql.Driver
-    username: postgres
-    password: secretpassword
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: update
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    baseline-version: 1
+security:
+  admin:
+    username: ${ADMIN_USERNAME}
+    password: ${ADMIN_PASSWORD}
+  jwt:
+    secret: ${JWT_SECRET}

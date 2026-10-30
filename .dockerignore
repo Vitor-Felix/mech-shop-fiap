@@ -1,0 +1,14 @@
+.git
+.github
+.gradle
+.idea
+.ai
+.kotlin
+build
+out
+reports
+test-output
+test-reports
+*.log
+.env
+.env.*

@@ -7,7 +7,7 @@ import org.junit.jupiter.api.assertThrows
 
 class TokenServiceTest {
 
-    private val tokenService = TokenService()
+    private val tokenService = TokenService("test-only-jwt-secret-with-at-least-32-bytes")
 
     @Test
     fun `should generate and validate token successfully`() {
@@ -24,6 +24,13 @@ class TokenServiceTest {
     fun `should throw exception when token is invalid`() {
         assertThrows<Exception> {
             tokenService.validateToken("token-completamente-invalido")
+        }
+    }
+
+    @Test
+    fun `should reject a short signing secret`() {
+        assertThrows<IllegalArgumentException> {
+            TokenService("too-short")
         }
     }
 }

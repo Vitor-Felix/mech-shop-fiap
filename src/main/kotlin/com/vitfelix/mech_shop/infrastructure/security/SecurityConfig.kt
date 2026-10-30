@@ -20,6 +20,8 @@ class SecurityConfig(
             .csrf { it.disable() }
             .sessionManagement { it.sessionCreationPolicy(SessionCreationPolicy.STATELESS) }
             .authorizeHttpRequests { req ->
+                req.requestMatchers("/actuator/health/**").permitAll()
+
                 // 1. Rotas Públicas do Sistema
                 req.requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 req.requestMatchers("/api/work-orders/**").permitAll()
