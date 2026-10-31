@@ -84,6 +84,8 @@ O payload cadastral contém `brand`, `model`, `year`, `color` e `price`. Respost
 
 `check` executa os testes e falha se a cobertura de linhas JaCoCo ficar abaixo de 80%. O relatório HTML fica em `build/reports/jacoco/test/html/index.html`. A imagem Docker compila o artefato executável nomeado, sem wildcard ambíguo; a CI roda testes/cobertura antes de validar o build Java.
 
+Nos workflows do GitHub Actions, `CI` executa testes, cobertura, `bootJar` e `docker build`; o check do job de build aparece como `verify`. O workflow `Test Coverage` executa a verificação JaCoCo de 80% em separado; seu check aparece como `coverage`. Ambos rodam em PRs e pushes para `develop` e `main`. Configure `verify` e `coverage` como status checks obrigatórios nas regras de proteção das branches.
+
 ```bash
 docker build --no-cache -t vehicle-catalog-api:local .
 docker compose config --quiet
@@ -100,7 +102,7 @@ Antes de aplicar os manifests:
 3. Configure `VEHICLE_SALES_BASE_URL` no ConfigMap `vehicle-catalog-api-config` se a integração for habilitada.
 4. Aponte o datasource para a base PostgreSQL isolada do catálogo e aplique `kubectl apply -k k8s/base/`.
 
-A CI em `.github/workflows/ci.yml` roda em Pull Requests para `main` e em push/merge para `main`, com testes, cobertura mínima e build. **A publicação de imagem e o CD para cluster ainda não estão habilitados:** este repositório não define registry, provedor/cluster ou credenciais. A escolha de destino e a configuração de secrets/variáveis de ambiente do GitHub e do cluster são necessárias antes de automatizar o deploy; não se presume um deploy operacional.
+Os workflows em `.github/workflows/` validam Pull Requests e pushes para `develop` e `main`. A CI bloqueia PRs direcionados a `main` quando a origem não é a branch `develop`; configure `enforce-main-source`, `verify` e `coverage` como checks obrigatórios na proteção de `main`. **A publicação de imagem e o CD para cluster ainda não estão habilitados:** este repositório não define registry, provedor/cluster ou credenciais. A escolha de destino e a configuração de secrets/variáveis de ambiente do GitHub e do cluster são necessárias antes de automatizar o deploy; não se presume um deploy operacional.
 
 ## Migrações e preservação de dados
 
