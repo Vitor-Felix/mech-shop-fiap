@@ -1,7 +1,6 @@
 services:
   vehicle-catalog-db:
     image: postgres:16-alpine
-    container_name: vehicle-catalog-postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-mechshop}
       POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER for the catalog database}
@@ -19,9 +18,10 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: vehicle-catalog-api
     ports:
       - "8080:8080"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     environment:
       SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:postgresql://vehicle-catalog-db:5432/${POSTGRES_DB:-mechshop}
